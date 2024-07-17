@@ -2,7 +2,8 @@ from django.shortcuts import render, get_object_or_404
 from .models import Post
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
-from .froms import EmailPostForm
+from django.core.mail import send_mail, EmailMessage
+from .forms import EmailPostForm
 
 
 # Create your views here.
@@ -51,12 +52,22 @@ def post_share(request, post_id):
     # Извлекаю пост по id
     post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
 
+    sent = False
+
     if request.method == 'POST':
         # Форма передана на обработку
         form = EmailPostForm(request.POST)
 
         if form.is_valid():
             cd = form.cleaned_data
+            post_url = request.build_absolute_uri(post.get_absolute_url())
+
+            subject = f'{cd["name"]} рекомендую прочитать {post.title}'
+            message = (f'Прочитай {post.title} по ссылке {post_url}\n\n'
+                       f'{cd["name"]} комментарии: {cd["comments"]}')
+
+            send_mail(subject, message, 'igor.gass2003@mail.ru', [cd['to']])
+            sent = True
     else:
         form = EmailPostForm()
 
@@ -64,5 +75,6 @@ def post_share(request, post_id):
                   'blog/post/share.html',
                   {
                       'post': post,
-                      'form': form
+                      'form': form,
+                      'sent': sent,
                   })
