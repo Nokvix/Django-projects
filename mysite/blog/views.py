@@ -38,7 +38,7 @@ class PostListView(ListView):
     template_name = 'blog/post/list.html'
 
 
-def post_detail(request, year, month, day, post):
+def post_detail(request, year: int, month: int, day: int, post: str):
     post = get_object_or_404(Post,
                              status=Post.Status.PUBLISHED,
                              slug=post,
@@ -60,7 +60,7 @@ def post_detail(request, year, month, day, post):
                   })
 
 
-def post_share(request, post_id):
+def post_share(request, post_id: int):
     # Извлекаю пост по id
     post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
 
@@ -93,7 +93,7 @@ def post_share(request, post_id):
 
 
 @require_POST
-def post_comment(request, post_id):
+def post_comment(request, post_id: int):
     post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
     comment = None
 
