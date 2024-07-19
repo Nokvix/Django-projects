@@ -5,37 +5,47 @@ from django.views.generic import ListView
 from django.core.mail import send_mail, EmailMessage
 from .forms import EmailPostForm, CommentForm
 from django.views.decorators.http import require_POST
+from taggit.models import Tag
 
 
 # Create your views here.
 
 
-# def post_list(request):
-#     post_published_list = Post.published.all()
+def post_list(request, tag_slug: str = None):
+    post_published_list = Post.published.all()
+
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_published_list = post_published_list.filter(tags__in=[tag])
+
+    # Добавление пагинации по 3 поста на страницу
+    paginator = Paginator(post_published_list, 3)
+    page_number = request.GET.get('page', 1)
+    try:
+        posts = paginator.page(page_number)
+    except PageNotAnInteger:
+        posts = paginator.page(1)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+
+    return render(request, 'blog/post/list.html',
+                  {
+                      'posts': posts,
+                      'tag': tag,
+                  })
+
+
+# class PostListView(ListView):
+#     """
+#     Альтернативный способ представления списка постов.
+#     Аналог post_list
+#     """
 #
-#     # Добавление пагинации по 3 поста на страницу
-#     paginator = Paginator(post_published_list, 3)
-#     page_number = request.GET.get('page', 1)
-#     try:
-#         posts = paginator.page(page_number)
-#     except PageNotAnInteger:
-#         posts = paginator.page(1)
-#     except EmptyPage:
-#         posts = paginator.page(paginator.num_pages)
-#
-#     return render(request, 'blog/post/list.html', {'posts': posts})
-
-
-class PostListView(ListView):
-    """
-    Альтернативный способ представления списка постов.
-    Аналог post_list
-    """
-
-    queryset = Post.published.all()
-    context_object_name = 'posts'
-    paginate_by = 3
-    template_name = 'blog/post/list.html'
+#     queryset = Post.published.all()
+#     context_object_name = 'posts'
+#     paginate_by = 3
+#     template_name = 'blog/post/list.html'
 
 
 def post_detail(request, year: int, month: int, day: int, post: str):
