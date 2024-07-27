@@ -3,8 +3,10 @@ from .models import Post, Comment
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
 from django.core.mail import send_mail, EmailMessage
-from .forms import EmailPostForm, CommentForm
+from .forms import EmailPostForm, CommentForm, SearchForm
+from django.contrib.postgres.search import SearchVector, SearchRank, SearchQuery
 from django.views.decorators.http import require_POST
+from django.contrib.postgres.search import TrigramSimilarity
 from taggit.models import Tag
 from django.db.models import Count
 
@@ -126,4 +128,29 @@ def post_comment(request, post_id: int):
                       'post': post,
                       'form': form,
                       'comment': comment,
+                  })
+
+
+def post_search(request):
+    form = SearchForm()
+    query = None
+    results = []
+
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            # search_vector = SearchVector('title', weight='A') + SearchVector('body', weight='B')
+            # search_query = SearchQuery(query)
+            # search_query = SearchQuery(query, config='russian')  # Удаление стоп слов на русском (config)
+            results = (Post.published.annotate(similarity=TrigramSimilarity('title', query))
+                       .filter(similarity__gt=0.1).order_by('-similarity'))  # Поиск по триграммному сходству
+
+    return render(request,
+                  'blog/post/search.html',
+                  {
+                      'form': form,
+                      'query': query,
+                      'results': results,
                   })
