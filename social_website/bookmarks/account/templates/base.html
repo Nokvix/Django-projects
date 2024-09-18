@@ -25,11 +25,10 @@
         <span class="user">
             {% if request.user.is_authenticated %}
                 Привет {{ request.uset.first_name|default:request.user.username }},
-                <a href="{% url 'logout' %}">Выход</a>
-<!--                <form action="{% url 'logout' %}" method="post">-->
-<!--                    {% csrf_token %}-->
-<!--                    <input type="submit" value="Выход">-->
-<!--                </form>-->
+                <form action="{% url 'logout' %}" method="post">
+                    <button type="submit">Выход</button>
+                    {% csrf_token %}
+                </form>
             {% else %}
                 <a href="{% url 'login' %}">Вход</a>
             {% endif %}
